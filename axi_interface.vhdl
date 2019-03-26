@@ -3,7 +3,7 @@ library ieee;
 use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
 
-entity Pmod_NIC100_AXI is
+entity axi_interface is
 	generic (
 		C_S_AXI_DATA_WIDTH : integer := 32;
 		C_S_AXI_ADDR_WIDTH : integer := 4
@@ -31,9 +31,9 @@ entity Pmod_NIC100_AXI is
 		S_AXI_RVALID  : out std_logic;
 		S_AXI_RREADY  : in std_logic
 	);
-end Pmod_NIC100_AXI;
+end axi_interface;
 
-architecture RTL of Pmod_NIC100_AXI is
+architecture RTL of axi_interface is
 
     signal axi_awaddr	: std_logic_vector(C_S_AXI_ADDR_WIDTH-1 downto 0);
 	signal axi_awready	: std_logic;
