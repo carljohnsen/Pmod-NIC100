@@ -13,13 +13,13 @@ entity pmod_nic100 is
         status_error : out std_logic;
         status_stage : out std_logic_vector(3 downto 0);
 
-        bram_ena    : in std_logic;
-        bram_addr   : in std_logic_vector(10 downto 0);
-        bram_wrena  : in std_logic;
-        bram_wrdata : in std_logic_vector(7 downto 0);
-        bram_rddata : out std_logic_vector(7 downto 0);
-        bram_clk    : in std_logic;
-        bram_rst    : in std_logic;
+        bram_ena    : out std_logic;
+        bram_addr   : out std_logic_vector(10 downto 0);
+        bram_wrena  : out std_logic;
+        bram_wrdata : out std_logic_vector(7 downto 0);
+        bram_rddata : in std_logic_vector(7 downto 0);
+        --bram_clk    : out std_logic;
+        --bram_rst    : out std_logic;
 
         busy   : out std_logic;
         tx     : in std_logic;
@@ -33,11 +33,11 @@ end pmod_nic100;
 
 architecture RTL of pmod_nic100 is
 
-    signal ena_a    : std_logic;
-    signal addr_a   : std_logic_vector(10 downto 0);
-    signal wrena_a  : std_logic;
-    signal wrdata_a : std_logic_vector(7 downto 0);
-    signal rddata_a : std_logic_vector(7 downto 0);
+    --signal ena_a    : std_logic;
+    --signal addr_a   : std_logic_vector(10 downto 0);
+    --signal wrena_a  : std_logic;
+    --signal wrdata_a : std_logic_vector(7 downto 0);
+    --signal rddata_a : std_logic_vector(7 downto 0);
 
     signal wr_valid    : std_logic;
     signal wr_data     : std_logic_vector(7 downto 0);
@@ -52,24 +52,24 @@ architecture RTL of pmod_nic100 is
 
 begin
     
-    bram : entity work.ram
-    port map(
-        ena_a    => ena_a,
-        addr_a   => addr_a,
-        wrena_a  => wrena_a,
-        wrdata_a => wrdata_a,
-        rddata_a => rddata_a,
-        clk_a    => clk,
-        rst_a    => rst,
-
-        ena_b    => bram_ena,
-        addr_b   => bram_addr,
-        wrena_b  => bram_wrena,
-        wrdata_b => bram_wrdata,
-        rddata_b => bram_rddata,
-        clk_b    => bram_clk,
-        rst_b    => bram_rst
-    );
+    --bram : entity work.ram
+    --port map(
+    --    ena_a    => ena_a,
+    --    addr_a   => addr_a,
+    --    wrena_a  => wrena_a,
+    --    wrdata_a => wrdata_a,
+    --    rddata_a => rddata_a,
+    --    clk_a    => clk,
+    --    rst_a    => rst,
+    --
+    --    ena_b    => bram_ena,
+    --    addr_b   => bram_addr,
+    --    wrena_b  => bram_wrena,
+    --    wrdata_b => bram_wrdata,
+    --    rddata_b => bram_rddata,
+    --    clk_b    => bram_clk,
+    --    rst_b    => bram_rst
+    --);
 
     spi : entity work.spi
     port map(
@@ -93,11 +93,11 @@ begin
 
     controller : entity work.controller
     port map(
-        bram_ena    => ena_a,
-        bram_addr   => addr_a,
-        bram_wrena  => wrena_a,
-        bram_wrdata => wrdata_a,
-        bram_rddata => rddata_a,
+        bram_ena    => bram_ena,
+        bram_addr   => bram_addr,
+        bram_wrena  => bram_wrena,
+        bram_wrdata => bram_wrdata,
+        bram_rddata => bram_rddata,
 
         wr_valid    => wr_valid,
         wr_data     => wr_data,

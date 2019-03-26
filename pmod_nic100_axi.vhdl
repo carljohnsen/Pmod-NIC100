@@ -17,13 +17,13 @@ entity Pmod_NIC100_AXI is
         status_error : out std_logic;
         status_stage : out std_logic_vector(3 downto 0);
 
-        bram_ena    : in std_logic;
-        bram_addr   : in std_logic_vector(10 downto 0);
-        bram_wrena  : in std_logic;
-        bram_wrdata : in std_logic_vector(7 downto 0);
-        bram_rddata : out std_logic_vector(7 downto 0);
-        bram_clk    : in std_logic;
-        bram_rst    : in std_logic;
+        bram_ena    : out std_logic;
+        bram_addr   : out std_logic_vector(10 downto 0);
+        bram_wrena  : out std_logic;
+        bram_wrdata : out std_logic_vector(7 downto 0);
+        bram_rddata : in std_logic_vector(7 downto 0);
+        bram_clk    : out std_logic;
+        bram_rst    : out std_logic;
 
         S_AXI_ACLK      : in std_logic;
 		S_AXI_ARESETN   : in std_logic;
@@ -64,6 +64,9 @@ architecture RTL of Pmod_NIC100_AXI is
     ATTRIBUTE X_INTERFACE_INFO OF bram_rst: SIGNAL IS "xilinx.com:interface:bram:1.0 BRAM_PORTA RST";
     ATTRIBUTE X_INTERFACE_INFO OF bram_wrena: SIGNAL IS "xilinx.com:interface:bram:1.0 BRAM_PORTA WE";
 begin
+    bram_clk <= S_AXI_ACLK;
+    bram_rst <= S_AXI_ARESETN;
+
     axi_interface : entity work.axi_interface
     generic map (
 		C_S_AXI_DATA_WIDTH	=> C_S_AXI_DATA_WIDTH,
@@ -114,8 +117,8 @@ begin
         bram_wrena  => bram_wrena,
         bram_wrdata => bram_wrdata,
         bram_rddata => bram_rddata,
-        bram_clk    => bram_clk,
-        bram_rst    => bram_cst,
+        --bram_clk    => bram_clk,
+        --bram_rst    => bram_rst,
 
         busy   => busy,
         tx     => tx,
