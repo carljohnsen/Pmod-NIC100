@@ -18,6 +18,8 @@ entity pmod_nic100 is
         bram_wrena  : in std_logic;
         bram_wrdata : in std_logic_vector(7 downto 0);
         bram_rddata : out std_logic_vector(7 downto 0);
+        bram_clk    : in std_logic;
+        bram_rst    : in std_logic;
 
         busy   : out std_logic;
         tx     : in std_logic;
@@ -57,15 +59,16 @@ begin
         wrena_a  => wrena_a,
         wrdata_a => wrdata_a,
         rddata_a => rddata_a,
+        clk_a    => clk,
+        rst_a    => rst,
 
         ena_b    => bram_ena,
         addr_b   => bram_addr,
         wrena_b  => bram_wrena,
         wrdata_b => bram_wrdata,
         rddata_b => bram_rddata,
-
-        clk => clk,
-        rst => rst
+        clk_b    => bram_clk,
+        rst_b    => bram_rst
     );
 
     spi : entity work.spi
