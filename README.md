@@ -5,6 +5,8 @@ VHDL implementation of the SPI interface for Pmod NIC100 https://store.digilenti
 # Quickstart
 After a reset, wait for ```busy``` to go low
 
+TODO: Husk at tilføj et rx_len. Måske bare få samlet rx/tx i samme register
+
 ## Using the simple interface
 To send a packet 
 1. Fill the Block RAM with the packet 
@@ -23,12 +25,12 @@ To receive a packet
 
 ## Using the AXI interface
 Same as when using the simple interface. However, ```rx``` and ```tx``` should not be unset, as the hardware will take care of that. The following signals are mapped to the following registers:
-|Register|Signal       |
-|--------|-------------|
-|    0   |  ```busy``` |
-|    1   |   ```rx```  |
-|    2   |   ```tx```  |
-|    3   | ```tx_len```|
+|Register|   Signal   |
+|--------|------------|
+|    0   | ```busy``` |
+|    1   |  ```rx```  |
+|    2   |  ```tx```  |
+|    3   |```tx_len```|
 
 # Notes
 The VHDL file consists of two state machines:

@@ -59,7 +59,11 @@ architecture RTL of controller is
         verify0, verify1, verify2, verify3,
         verify4, verify5, verify6, verify7,
         verify8, verify9,
-        term, debug0, debug1
+        term, debug0, debug1,
+        ctrl_idle,
+        tx0,  tx1,  tx2,  tx3,  tx4,  tx5,  tx6,  tx7,
+        tx8,  tx9,  tx10, tx11, tx12, tx13, tx14, tx15,
+        tx16, tx17, tx18, tx19, tx20
     );
 
     -- Signals
@@ -164,6 +168,10 @@ begin
             j <= 0;
             buf <= (others => '0');
             busy <= '1';
+            bram_ena <= '0';
+            bram_addr <= "00000000000";
+            bram_wrena <= '0';
+            bram_wrdata <= x"00";
         elsif rising_edge(clk) then
             case control_state is
                 when init0 =>
@@ -527,7 +535,127 @@ begin
                     end if;
                 when build25 =>
                     if wr_done = '1' then
-                        control_state <= verify0;
+                        busy <= '0';
+                        control_state <= ctrl_idle;
+                    end if;
+
+                when ctrl_idle =>
+                    if tx = '1' then
+                        j <= to_integer(unsigned(tx_len));
+                        busy <= '1';
+                        control_state <= tx0;
+                        status_stage <= tx_len(3 downto 0);
+                    end if;
+                
+                when tx0 =>
+                    wr_valid <= '1';
+                    wr_data <= WCRU;
+                    control_state <= tx1;
+                when tx1 =>
+                    if wr_got_byte = '1' then
+                        wr_data <= ETXSTL;
+                        control_state <= tx2;
+                    end if;
+                when tx2 =>
+                    if wr_got_byte = '1' then
+                        wr_data <= x"00"; -- ETXSTL = 0
+                        control_state <= tx3;
+                    end if;
+                when tx3 =>
+                    if wr_got_byte = '1' then
+                        wr_data <= x"00"; -- ETXSTH = 0
+                        control_state <= tx4;
+                    end if;
+                when tx4 =>
+                    if wr_got_byte = '1' then
+                        wr_data <= std_logic_vector(to_unsigned(j, 8)); -- ETXLENL
+                        control_state <= tx5;
+                    end if;
+                when tx5 =>
+                    if wr_got_byte = '1' then
+                        wr_data <= x"00"; -- ETXLENH = 0
+                        control_state <= tx6;
+                    end if;
+                when tx6 =>
+                    if wr_got_byte = '1' then
+                        wr_valid <= '0';
+                        control_state <= tx7;
+                    end if;
+                when tx7 =>
+                    if wr_done = '1' then
+                        control_state <= tx8;
+                    end if;
+
+                when tx8 =>
+                    wr_valid <= '1';
+                    wr_data <= WCRU;
+                    control_state <= tx9;
+                when tx9 => 
+                    if wr_got_byte = '1' then
+                        wr_data <= EUDASTL;
+                        control_state <= tx10;
+                    end if;
+                when tx10 =>
+                    if wr_got_byte = '1' then
+                        wr_data <= x"00"; -- EUDASTL = 00
+                        control_state <= tx11;
+                    end if;
+                when tx11 =>
+                    if wr_got_byte = '1' then
+                        wr_data <= x"00"; -- EUDASTH = 00
+                        control_state <= tx12;
+                    end if;
+                when tx12 =>
+                    if wr_got_byte = '1' then
+                        wr_valid <= '0';
+                        control_state <= tx13;
+                    end if;
+                when tx13 =>
+                    if wr_done = '1' then
+                        control_state <= tx14;
+                        k <= 0;
+                    end if;
+
+                when tx14 =>
+                    wr_valid <= '1';
+                    wr_data <= WUDADATA;
+                    control_state <= tx15;
+                    bram_ena <= '1';
+                    bram_addr <= std_logic_vector(to_unsigned(k, 11));
+                
+                when tx15 => 
+                    if wr_got_byte = '1' then
+                        wr_data <= bram_rddata;
+                        if k = j-1 then
+                            control_state <= tx16;
+                        end if;
+                        k <= k + 1;
+                        bram_addr <= std_logic_vector(to_unsigned(k + 1, 11));
+                    end if;
+                when tx16 =>
+                    if wr_got_byte = '1' then
+                        wr_valid <= '0';
+                        control_state <= tx17;
+                        bram_ena <= '0';
+                    end if;
+                when tx17 =>
+                    if wr_done = '1' then
+                        control_state <= tx18;
+                    end if;
+
+                when tx18 => -- Start the transaction
+                    wr_valid <= '1';
+                    wr_data <= SETTXRTS;
+                    control_state <= tx19;
+                when tx19 =>
+                    if wr_got_byte = '1' then
+                        wr_valid <= '0';
+                        control_state <= tx20;
+                    end if;
+                when tx20 =>
+                    if wr_done = '1' then
+                        busy <= '0';
+                        control_state <= ctrl_idle;
                     end if;
                 
                 -- Check the TXRTS bit is cleared
