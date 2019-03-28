@@ -51,9 +51,10 @@ end Pmod_NIC100_AXI;
 
 architecture RTL of Pmod_NIC100_AXI is
     signal busy   : std_logic;
+    signal rx     : std_logic;
+    signal rx_len : std_logic_vector(10 downto 0);
     signal tx     : std_logic;
     signal tx_len : std_logic_vector(10 downto 0);
-    signal rx     : std_logic;
 
 --    ATTRIBUTE X_INTERFACE_INFO : string;
 --    ATTRIBUTE X_INTERFACE_INFO OF bram_addr: SIGNAL IS "xilinx.com:interface:bram:1.0 BRAM_PORTA ADDR";
@@ -74,9 +75,10 @@ begin
 	)
 	port map (
         busy   => busy,
+        rx     => rx,
+        rx_len => rx_len,
         tx     => tx,
         tx_len => tx_len,
-        rx     => rx,
 
 		S_AXI_ACLK      => S_AXI_ACLK,
 		S_AXI_ARESETN   => S_AXI_ARESETN,
@@ -121,9 +123,10 @@ begin
         --bram_rst    => bram_rst,
 
         busy   => busy,
+        rx     => rx,
+        rx_len => rx_len,
         tx     => tx,
         tx_len => tx_len,
-        rx     => rx,
 
         clk => S_AXI_ACLK,
         rst => S_AXI_ARESETN

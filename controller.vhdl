@@ -24,9 +24,10 @@ entity controller is
         status_stage : out std_logic_vector(3 downto 0);
 
         busy : out std_logic;
+        rx : in std_logic;
+        rx_len : out std_logic_vector(10 downto 0);
         tx : in std_logic;
         tx_len : in std_logic_vector(10 downto 0);
-        rx : in std_logic;
 
         clk: in std_logic;
         rst: in std_logic

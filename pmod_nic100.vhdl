@@ -22,9 +22,10 @@ entity pmod_nic100 is
         --bram_rst    : out std_logic;
 
         busy   : out std_logic;
+        rx     : in std_logic;
+        rx_len : out std_logic_vector(10 downto 0);
         tx     : in std_logic;
         tx_len : in std_logic_vector(10 downto 0);
-        rx     : in std_logic;
 
         clk : in std_logic;
         rst : in std_logic
@@ -113,9 +114,10 @@ begin
         status_stage => status_stage,
 
         busy   => busy,
+        rx     => rx,
+        rx_len => rx_len,
         tx     => tx,
         tx_len => tx_len,
-        rx     => rx,
 
         clk => clk,
         rst => rst
