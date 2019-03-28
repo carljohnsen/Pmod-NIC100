@@ -261,9 +261,11 @@ proc create_root_design { parentCell } {
   set blk_mem_gen_0 [ create_bd_cell -type ip -vlnv xilinx.com:ip:blk_mem_gen:8.4 blk_mem_gen_0 ]
   set_property -dict [ list \
    CONFIG.Byte_Size {9} \
+   CONFIG.Coe_File {arp_packet.coe} \
    CONFIG.EN_SAFETY_CKT {false} \
    CONFIG.Enable_32bit_Address {false} \
    CONFIG.Enable_B {Use_ENB_Pin} \
+   CONFIG.Load_Init_File {true} \
    CONFIG.Memory_Type {True_Dual_Port_RAM} \
    CONFIG.Port_B_Clock {100} \
    CONFIG.Port_B_Enable_Rate {100} \
@@ -1097,7 +1099,6 @@ proc create_root_design { parentCell } {
  ] $xlslice_0
 
   # Create interface connections
-  connect_bd_intf_net -intf_net Pmod_NIC100_AXI_0_BRAM_PORTA [get_bd_intf_pins Pmod_NIC100_AXI_0/BRAM_PORTA] [get_bd_intf_pins blk_mem_gen_0/BRAM_PORTA]
   connect_bd_intf_net -intf_net processing_system7_0_DDR [get_bd_intf_ports DDR] [get_bd_intf_pins processing_system7_0/DDR]
   connect_bd_intf_net -intf_net processing_system7_0_FIXED_IO [get_bd_intf_ports FIXED_IO] [get_bd_intf_pins processing_system7_0/FIXED_IO]
   connect_bd_intf_net -intf_net processing_system7_0_M_AXI_GP0 [get_bd_intf_pins processing_system7_0/M_AXI_GP0] [get_bd_intf_pins ps7_0_axi_periph/S00_AXI]
@@ -1105,6 +1106,11 @@ proc create_root_design { parentCell } {
   connect_bd_intf_net -intf_net ps7_0_axi_periph_M01_AXI [get_bd_intf_pins axi_bram_ctrl_0/S_AXI] [get_bd_intf_pins ps7_0_axi_periph/M01_AXI]
 
   # Create port connections
+  connect_bd_net -net Pmod_NIC100_AXI_0_bram_addr [get_bd_pins Pmod_NIC100_AXI_0/bram_addr] [get_bd_pins blk_mem_gen_0/addra]
+  connect_bd_net -net Pmod_NIC100_AXI_0_bram_clk [get_bd_pins Pmod_NIC100_AXI_0/bram_clk] [get_bd_pins blk_mem_gen_0/clka]
+  connect_bd_net -net Pmod_NIC100_AXI_0_bram_ena [get_bd_pins Pmod_NIC100_AXI_0/bram_ena] [get_bd_pins blk_mem_gen_0/ena]
+  connect_bd_net -net Pmod_NIC100_AXI_0_bram_wrdata [get_bd_pins Pmod_NIC100_AXI_0/bram_wrdata] [get_bd_pins blk_mem_gen_0/dina]
+  connect_bd_net -net Pmod_NIC100_AXI_0_bram_wrena [get_bd_pins Pmod_NIC100_AXI_0/bram_wrena] [get_bd_pins blk_mem_gen_0/wea]
   connect_bd_net -net Pmod_NIC100_AXI_0_pmod_mosi [get_bd_ports pmod_mosi_0] [get_bd_pins Pmod_NIC100_AXI_0/pmod_mosi]
   connect_bd_net -net Pmod_NIC100_AXI_0_pmod_sck [get_bd_ports pmod_sck_0] [get_bd_pins Pmod_NIC100_AXI_0/pmod_sck]
   connect_bd_net -net Pmod_NIC100_AXI_0_pmod_ss [get_bd_ports pmod_ss_0] [get_bd_pins Pmod_NIC100_AXI_0/pmod_ss]
@@ -1116,6 +1122,7 @@ proc create_root_design { parentCell } {
   connect_bd_net -net axi_bram_ctrl_0_bram_en_a [get_bd_pins axi_bram_ctrl_0/bram_en_a] [get_bd_pins blk_mem_gen_0/enb]
   connect_bd_net -net axi_bram_ctrl_0_bram_we_a [get_bd_pins axi_bram_ctrl_0/bram_we_a] [get_bd_pins util_reduced_logic_0/Op1]
   connect_bd_net -net axi_bram_ctrl_0_bram_wrdata_a [get_bd_pins axi_bram_ctrl_0/bram_wrdata_a] [get_bd_pins blk_mem_gen_0/dinb]
+  connect_bd_net -net blk_mem_gen_0_douta [get_bd_pins Pmod_NIC100_AXI_0/bram_rddata] [get_bd_pins blk_mem_gen_0/douta]
   connect_bd_net -net blk_mem_gen_0_doutb [get_bd_pins axi_bram_ctrl_0/bram_rddata_a] [get_bd_pins blk_mem_gen_0/doutb]
   connect_bd_net -net clk_wiz_clk_out1 [get_bd_pins Pmod_NIC100_AXI_0/S_AXI_ACLK] [get_bd_pins clk_wiz/clk_out1] [get_bd_pins ps7_0_axi_periph/M00_ACLK] [get_bd_pins rst_clk_wiz_100M/slowest_sync_clk]
   connect_bd_net -net clk_wiz_locked [get_bd_pins clk_wiz/locked] [get_bd_pins rst_clk_wiz_100M/dcm_locked]
