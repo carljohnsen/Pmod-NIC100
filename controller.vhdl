@@ -45,7 +45,8 @@ architecture RTL of controller is
         init25, init26, init27, init28, init29, 
         init30, init31, init32, init33, init34,
         init35, init36, init37, init38, init39,
-        init40,
+        init40, init41, init42, init43, init44,
+        init45,
         ctrl_idle,
         tx0,  tx1,  tx2,  tx3,  tx4,  
         tx5,  tx6,  tx7,  tx8,  tx9,  
@@ -336,6 +337,30 @@ begin
                         control_state <= init40;
                     end if;
                 when init40 =>
+                    if wr_done = '1' then
+                        control_state <= init41;
+                    end if;
+
+                when init41 => -- Enable packet reception
+                    wr_valid = '1';
+                    wr_data <= BFSU;
+                    control_state <= init42;
+                when init42 =>
+                    if wr_got_byte = '1' then
+                        wr_data <= ECON1L;
+                        control_state <= init43;
+                    end if;
+                when init43 =>
+                    if wr_got_byte = '1' then
+                        wr_data <= RXEN;
+                        control_state <= init44;
+                    end if;
+                when init44 =>
+                    if wr_got_byte = '1' then
+                        wr_valid <= '0';
+                        control_state <= init45;
+                    end if;
+                when init45 =>
                     if wr_done = '1' then
                         control_state <= tx0;
                         i <= 90;
