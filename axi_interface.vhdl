@@ -131,7 +131,7 @@ begin
         if rising_edge(S_AXI_ACLK) then
             if S_AXI_ARESETN = '0' then
                 slv_reg1 <= (others => '0');
-                slv_reg2 <= (others => '0');
+                slv_reg3 <= (others => '0');
             else
                 loc_addr := axi_awaddr(ADDR_LSB + OPT_MEM_ADDR_BITS downto ADDR_LSB);
                 if (slv_reg_wren = '1') then
@@ -151,13 +151,13 @@ begin
                     when b"10" =>
                         for byte_index in 0 to (C_S_AXI_DATA_WIDTH/8-1) loop
                             if ( S_AXI_WSTRB(byte_index) = '1' ) then
-                                slv_reg2(byte_index*8+7 downto byte_index*8) <= S_AXI_WDATA(byte_index*8+7 downto byte_index*8);
+                                --slv_reg2(byte_index*8+7 downto byte_index*8) <= S_AXI_WDATA(byte_index*8+7 downto byte_index*8);
                             end if;
                         end loop;
                     when b"11" =>
                         for byte_index in 0 to (C_S_AXI_DATA_WIDTH/8-1) loop
                             if ( S_AXI_WSTRB(byte_index) = '1' ) then
-                                --slv_reg3(byte_index*8+7 downto byte_index*8) <= S_AXI_WDATA(byte_index*8+7 downto byte_index*8);
+                                slv_reg3(byte_index*8+7 downto byte_index*8) <= S_AXI_WDATA(byte_index*8+7 downto byte_index*8);
                             end if;
                         end loop;
                     when others =>
@@ -166,16 +166,16 @@ begin
                         -- When the ethernet driver has consumed the values, reset the registers
                         if busy = '1' then
                             slv_reg1 <= (others => '0');
-                            slv_reg2 <= (others => '0');
+                            slv_reg3 <= (others => '0');
                         else
                             slv_reg1 <= slv_reg1;
-                            slv_reg2 <= slv_reg2;
+                            slv_reg3 <= slv_reg3;
                         end if;
                     end case;
                 -- When the ethernet driver has consumed the values, reset the registers
                 elsif busy = '1' then
                     slv_reg1 <= (others => '0');
-                    slv_reg2 <= (others => '0');
+                    slv_reg3 <= (others => '0');
                 end if;
             end if;
         end if;
@@ -270,13 +270,13 @@ begin
     begin
         if S_AXI_ARESETN = '0' then
             slv_reg0 <= (others => '0');
-            slv_reg3 <= (others => '0');
+            slv_reg2 <= (others => '0');
             rx       <= '0';
             tx       <= '0';
             tx_len   <= (others => '0');
         elsif rising_edge(S_AXI_ACLK) then
             slv_reg0(0) <= busy;
-            slv_reg3(10 downto 0) <= rx_len;
+            slv_reg2(10 downto 0) <= rx_len;
             if busy = '1' then
                 rx     <= '0';
                 tx     <= '0';
@@ -284,7 +284,7 @@ begin
             else
                 rx     <= slv_reg1(0);
                 tx     <= slv_reg1(1);
-                tx_len <= slv_reg2(10 downto 0);
+                tx_len <= slv_reg3(10 downto 0);
             end if;
         end if;
     end process;
