@@ -68,6 +68,7 @@ architecture RTL of controller is
     constant WCRU     : std_logic_vector(7 downto 0) := "00100010";
     constant RCRU     : std_logic_vector(7 downto 0) := "00100000";
     constant BFSU     : std_logic_vector(7 downto 0) := "00100100";
+    constant RUDADATA : std_logic_vector(7 downto 0) := "00110000";
     constant WUDADATA : std_logic_vector(7 downto 0) := "00110010";
     constant SETTXRTS : std_logic_vector(7 downto 0) := "11010100";
 
@@ -85,6 +86,7 @@ architecture RTL of controller is
     constant MAMXFLL   : std_logic_vector(7 downto 0) := x"4a";
     constant EIEL      : std_logic_vector(7 downto 0) := x"72";
     constant EIEH      : std_logic_vector(7 downto 0) := x"73";
+    constant EUDARDPTL : std_logic_vector(7 downto 0) := x"8E";
     constant EUDAWRPTL : std_logic_vector(7 downto 0) := x"90";
     constant PKTCNT    : std_logic_vector(7 downto 0) := ESTATL;
     constant EIRL      : std_logic_vector(7 downto 0) := x"1c";
@@ -426,7 +428,7 @@ begin
                         control_state <= tx0;
                     end if;
 
-                when rx0 =>
+                when rx0 => -- Check if there is a packet
                     wr_valid <= '1';
                     wr_data <= RCRU;
                     control_state <= rx1;
@@ -453,6 +455,65 @@ begin
                         control_state <= rx5;
                     else
                         control_state <= rx0;
+                    end if;
+
+                when rx5 => -- Move the read pointer
+                    wr_valid <= '1';
+                    wr_data <= WCRU;
+                    control_state <= rx6;
+                when rx6 =>
+                    if wr_got_byte = '1' then
+                        wr_data <= EUDARDPTL;
+                        control_state <= rx7;
+                    end if;
+                when rx7 =>
+                    if wr_got_byte = '1' then
+                        wr_data <= next_packet_ptr(7 downto 0);
+                        control_state <= rx8;
+                    end if;
+                when rx8 =>
+                    if wr_got_byte = '1' then
+                        wr_data <= next_packet_ptr(15 downto 0);
+                        control_state <= rx9;
+                    end if;
+                when rx9 =>
+                    if wr_got_byte = '1' then
+                        wr_valid <= '0';
+                        control_state <= rx10;
+                    end if;
+                when rx10 =>
+                    if wr_done = '1' then
+                        control_state <= rx11;
+                    end if;
+
+                when rx11 => -- Start reading the packet. First comes the next_packet_ptr TODO current version reads RSV. should read this ptr!
+                    wr_valid <= '1';
+                    wr_data <= RUDADATA;
+                    control_state <= rx12;
+                when rx12 =>
+                    if wr_got_byte = '1' then
+                        wr_valid <= '0';
+                        rd_stop <= '0';
+                        control_state <= rx13;
+                    end if;
+                when rx13 =>
+                    if rd_valid <= '1' then
+                        rsv(7 downto 0) <= rd_data;
+                        control_state <= rx14;
+                    end if;
+                when rx14 =>
+                    if rd_valid <= '1' then
+                        rsv(15 downto 8) <= rd_data;
+                        control_state <= rx15;
+                        i <= 3;
+                    end if;
+                when rx15 =>
+                    if rd_valid <= '1' then
+                        if i = 0 then
+                            control_state <= rx16;
+                            rx_len <= rsv;
+                        end if;
+                        i <= i - 1;
                     end if;
                 
                 when tx0 =>
