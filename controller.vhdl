@@ -56,7 +56,7 @@ architecture RTL of controller is
 
     -- Signals
     signal control_state : control_state_type;
-    signal k, j, l : integer;
+    signal i, j : integer;
     signal buf : std_logic_vector(15 downto 0);
 
     -- Constants
@@ -108,9 +108,9 @@ begin
             wr_data <= (others => '0');
             wr_valid <= '0';
             rd_stop <= '1';
-            k <= 0;
-            l <= 0;
             j <= 0;
+            l <= 0;
+            i <= 0;
             buf <= (others => '0');
             busy <= '1';
             bram_ena <= '0';
@@ -233,12 +233,12 @@ begin
                 when init14a =>
                     if wr_done = '1' then
                         control_state <= init15;
-                        j <= 250;
+                        i <= 250;
                     end if;
 
                 when init15 =>
-                    j <= j - 1;
-                    if j = 0 then
+                    i <= i - 1;
+                    if i = 0 then
                         control_state <= init16;
                     end if;
 
@@ -271,15 +271,15 @@ begin
                 when init19 =>
                     if buf = x"0000" then
                         status_error <= '0';
-                        j <= 2560;
+                        i <= 2560;
                         control_state <= init20;
                     else
                         status_error <= '1';
                         control_state <= init16;
                     end if;
                 when init20 =>
-                    j <= j - 1;
-                    if j = 0 then
+                    i <= i - 1;
+                    if i = 0 then
                         control_state <= init21;
                     end if;
 
@@ -339,12 +339,12 @@ begin
                 when init31 =>
                     if wr_done = '1' then
                         control_state <= tx0;
-                        j <= 90;
+                        i <= 90;
                     end if;
 
                 when ctrl_idle =>
                     if tx = '1' then
-                        j <= to_integer(unsigned(tx_len));
+                        i <= to_integer(unsigned(tx_len));
                         busy <= '1';
                         control_state <= tx0;
                     end if;
@@ -370,7 +370,7 @@ begin
                     end if;
                 when tx4 =>
                     if wr_got_byte = '1' then
-                        tmp := std_logic_vector(to_unsigned(j, 16));
+                        tmp := std_logic_vector(to_unsigned(i, 16));
                         wr_data <= tmp(7 downto 0); -- ETXLENL
                         control_state <= tx5;
                     end if;
@@ -420,7 +420,7 @@ begin
                 when tx13 =>
                     if wr_done = '1' then
                         control_state <= tx14;
-                        k <= 0;
+                        j <= 0;
                     end if;
 
                 when tx14 =>
@@ -428,16 +428,16 @@ begin
                     wr_data <= WUDADATA;
                     control_state <= tx15;
                     bram_ena <= '1';
-                    bram_addr <= std_logic_vector(to_unsigned(k, 11));
+                    bram_addr <= std_logic_vector(to_unsigned(j, 11));
                 
                 when tx15 => 
                     if wr_got_byte = '1' then
                         wr_data <= bram_rddata;
-                        if k = j-1 then
+                        if j = i-1 then
                             control_state <= tx16;
                         end if;
-                        k <= k + 1;
-                        bram_addr <= std_logic_vector(to_unsigned(k + 1, 11));
+                        j <= j + 1;
+                        bram_addr <= std_logic_vector(to_unsigned(j + 1, 11));
                     end if;
                 when tx16 =>
                     if wr_got_byte = '1' then
