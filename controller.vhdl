@@ -46,19 +46,8 @@ architecture RTL of controller is
         init25, init26, init27, init28,
         init29, init30, init31,
         init3a, init4a, init8a, init14a, init16a,
-        build0,  build1,  build2,  build3,
-        build4,  build5,  build6,  build7,
-        build8,  build9,  build10, build11,
-        build12, build13, build14, --build15,
-        --build16, build17, build18, 
-        build19,
-        build20, build21, build22, build23,
-        build10a, build21a, build24, build25, build6a, --build15a,
         init0a, init8aa, init16aa, 
-        init4aa, build7a, verify0a,
-        verify0, verify1, verify2, verify3,
-        verify4, verify5, verify6, verify7,
-        verify8, verify9,
+        init4aa, 
         term, debug0, debug1,
         ctrl_idle,
         tx0,  tx1,  tx2,  tx3,  tx4,  tx5,  tx6,  tx7,
@@ -82,17 +71,18 @@ architecture RTL of controller is
     constant SETTXRTS : std_logic_vector(7 downto 0) := "11010100";
 
     -- Addresses
-    constant EUDASTL  : std_logic_vector(7 downto 0) := x"16";
-    constant ESTATH   : std_logic_vector(7 downto 0) := x"1b";
-    constant ECON1L   : std_logic_vector(7 downto 0) := x"1e";
-    constant ECON2L   : std_logic_vector(7 downto 0) := x"6e";
-    constant ECON2H   : std_logic_vector(7 downto 0) := x"6f";
-    constant ETXSTL   : std_logic_vector(7 downto 0) := x"00";
-    constant ETXWIREL : std_logic_vector(7 downto 0) := x"14";
-    constant MACON2L  : std_logic_vector(7 downto 0) := x"42";
-    constant MAMXFLL  : std_logic_vector(7 downto 0) := x"4a";
-    constant EIEL     : std_logic_vector(7 downto 0) := x"72";
-    constant EIEH     : std_logic_vector(7 downto 0) := x"73";
+    constant EUDASTL   : std_logic_vector(7 downto 0) := x"16";
+    constant ESTATH    : std_logic_vector(7 downto 0) := x"1b";
+    constant ECON1L    : std_logic_vector(7 downto 0) := x"1e";
+    constant ECON2L    : std_logic_vector(7 downto 0) := x"6e";
+    constant ECON2H    : std_logic_vector(7 downto 0) := x"6f";
+    constant ETXSTL    : std_logic_vector(7 downto 0) := x"00";
+    constant ETXWIREL  : std_logic_vector(7 downto 0) := x"14";
+    constant MACON2L   : std_logic_vector(7 downto 0) := x"42";
+    constant MAMXFLL   : std_logic_vector(7 downto 0) := x"4a";
+    constant EIEL      : std_logic_vector(7 downto 0) := x"72";
+    constant EIEH      : std_logic_vector(7 downto 0) := x"73";
+    constant EUDAWRPTL : std_logic_vector(7 downto 0) := x"90";
 
     -- Masks
     constant TXCRCEN  : std_logic_vector(7 downto 0) := "00010000"; -- MACON2L
@@ -107,49 +97,11 @@ architecture RTL of controller is
 
     -- Default control register values
     constant MACON2L_d : std_logic_vector(7 downto 0) := x"b2";
-
-    -- Dummy packet
-    constant packet_size : integer := 90;
-    type packet_t is array (packet_size-1 downto 0) of std_logic_vector(7 downto 0);
-    constant packet : packet_t := (
-        x"33", x"33", x"00", x"00", x"00", x"16", -- Destination MAC (IPv6mcast_16)
-        x"c0", x"ff", x"ee", x"c0", x"ff", x"ee", -- Source MAC (Stolen from the Pynqs chip)
-        x"86", x"dd",                             -- Type (IPv6)
-
-        x"60", x"00", x"00", x"00",               -- Version=6, Trafic class=0x00, Flow label=0x00000
-        x"00", x"24",                             -- Payload length (0x24)
-        x"00",                                    -- Next header
-        x"01",                                    -- Hop limit (1)
-        x"00", x"00", x"00", x"00", x"00", x"00", 
-        x"00", x"00", x"00", x"00", x"00", x"00", 
-        x"00", x"00", x"00", x"00",               -- Source (::)
-        x"ff", x"02", x"00", x"00", x"00", x"00", 
-        x"00", x"00", x"00", x"00", x"00", x"00", 
-        x"00", x"00", x"00", x"16",               -- Destination (ff02::16)
-        x"3a",                                    -- Next header (ICMPv6)
-        x"00",                                    -- Length (0)
-        x"05",                                    -- Router alert (0x05)
-        x"02",                                    -- Length (2)
-        x"00", x"00",                             -- Router alert (MLD)
-        x"01",                                    -- PadN
-        x"00",                                    -- Length (0)
-        
-        x"8f",                                    -- Type (Multicast listener report message v2)
-        x"00",                                    -- Code (0)
-        x"b4", x"c4",                             -- Checksum
-        x"00", x"00",                             -- Reserved
-        x"00", x"01",                             -- Number of multicast address records (1)
-        x"04",                                    -- Record type (Changed to exclude)
-        x"00",                                    -- AUX data len (0)
-        x"00", x"00",                             -- Number of Sources (0)
-        x"ff", x"02", x"00", x"00", x"00", x"00",
-        x"00", x"00", x"00", x"00", x"00", x"01",
-        x"ff", x"00", x"ba", x"c5"               -- Multicast address (ff02::1:ff00:bac5)
-    );
 begin
     
     process (clk, rst)
         variable debug_tmp : std_logic_vector(3 downto 0);
+        variable tmp : std_logic_vector(15 downto 0);
     begin
         if rst = '0' then
             -- reset
@@ -405,138 +357,8 @@ begin
                     end if;
                 when init31 =>
                     if wr_done = '1' then
-                        control_state <= build0;
-                    end if;
-
-                when build0 =>
-                    wr_valid <= '1';
-                    wr_data <= WCRU;
-                    control_state <= build1;
-                when build1 =>
-                    if wr_got_byte = '1' then
-                        wr_data <= ETXSTL;
-                        control_state <= build2;
-                    end if;
-                when build2 =>
-                    if wr_got_byte = '1' then
-                        wr_data <= x"00"; -- ETXSTL = 0
-                        control_state <= build3;
-                    end if;
-                when build3 =>
-                    if wr_got_byte = '1' then
-                        wr_data <= x"00"; -- ETXSTH = 0
-                        control_state <= build4;
-                    end if;
-                when build4 =>
-                    if wr_got_byte = '1' then
-                        wr_data <= std_logic_vector(to_unsigned(packet_size, 8)); -- ETXLENL
-                        control_state <= build5;
-                    end if;
-                when build5 =>
-                    if wr_got_byte = '1' then
-                        wr_data <= x"00"; -- ETXLENH = 0
-                        control_state <= build6;
-                    end if;
-                when build6 =>
-                    if wr_got_byte = '1' then
-                        wr_valid <= '0';
-                        control_state <= build6a;
-                    end if;
-                when build6a =>
-                    if wr_done = '1' then
-                        control_state <= build7;
-                    end if;
-
-                when build7 =>
-                    wr_valid <= '1';
-                    wr_data <= WCRU;
-                    control_state <= build7a;
-                when build7a => 
-                    if wr_got_byte = '1' then
-                        wr_data <= EUDASTL;
-                        control_state <= build8;
-                    end if;
-                when build8 =>
-                    if wr_got_byte = '1' then
-                        wr_data <= x"00"; -- EUDASTL = 00
-                        control_state <= build9;
-                    end if;
-                when build9 =>
-                    if wr_got_byte = '1' then
-                        wr_data <= x"00"; -- EUDASTH = 00
-                        control_state <= build10;
-                    end if;
-                when build10 =>
-                    if wr_got_byte = '1' then
-                        wr_valid <= '0';
-                        control_state <= build10a;
-                    end if;
-                when build10a =>
-                    if wr_done = '1' then
-                        control_state <= build11;
-                    end if;
-
-                when build11 =>
-                    wr_valid <= '1';
-                    wr_data <= WUDADATA;
-                    control_state <= build12;
-                    j <= packet_size-1;
-                    
-                when build12 => 
-                    if wr_got_byte = '1' then
-                        wr_data <= packet(j);
-                        if j = 0 then
-                            control_state <= build13;
-                        end if;
-                        j <= j - 1;
-                    end if;
-                when build13 =>
-                    if wr_got_byte = '1' then
-                        wr_valid <= '0';
-                        control_state <= build14;
-                    end if;
-                when build14 =>
-                    if wr_done = '1' then
-                        control_state <= build23;
-                    end if;
-
-                when build19 => -- Set the automatic insert mac flag
-                    wr_valid <= '1';
-                    wr_data <= BFSU;
-                    control_state <= build20;
-                when build20 =>
-                    if wr_got_byte = '1' then
-                        wr_data <= ECON2H;
-                        control_state <= build21;
-                    end if;
-                when build21 =>
-                    if wr_got_byte = '1' then
-                        wr_data <= TXMAC;
-                        control_state <= build21a;
-                    end if;
-                when build21a =>
-                    if wr_got_byte = '1' then
-                        wr_valid <= '0';
-                        control_state <= build22;
-                    end if;
-                when build22 =>
-                    if wr_done = '1' then
-                        control_state <= build23;
-                    end if;
-                
-                when build23 => -- Start the transaction
-                    wr_valid <= '1';
-                    wr_data <= SETTXRTS;
-                    control_state <= build24;
-                when build24 =>
-                    if wr_got_byte = '1' then
-                        wr_valid <= '0';
-                        control_state <= build25;
-                    end if;
-                when build25 =>
-                    if wr_done = '1' then
-                        busy <= '0';
-                        control_state <= ctrl_idle;
+                        control_state <= tx0;
+                        j <= 90;
                     end if;
 
                 when ctrl_idle =>
@@ -544,7 +366,6 @@ begin
                         j <= to_integer(unsigned(tx_len));
                         busy <= '1';
                         control_state <= tx0;
-                        status_stage <= tx_len(3 downto 0);
                     end if;
                 
                 when tx0 =>
@@ -568,12 +389,13 @@ begin
                     end if;
                 when tx4 =>
                     if wr_got_byte = '1' then
-                        wr_data <= std_logic_vector(to_unsigned(j, 8)); -- ETXLENL
+                        tmp := std_logic_vector(to_unsigned(j, 16));
+                        wr_data <= tmp(7 downto 0); -- ETXLENL
                         control_state <= tx5;
                     end if;
                 when tx5 =>
-                    if wr_got_byte = '1' then
-                        wr_data <= x"00"; -- ETXLENH = 0
+                    if wr_got_byte = '1' then 
+                        wr_data <= tmp(15 downto 8); -- ETXLENH = 0
                         control_state <= tx6;
                     end if;
                 when tx6 =>
@@ -590,19 +412,23 @@ begin
                     wr_valid <= '1';
                     wr_data <= WCRU;
                     control_state <= tx9;
+                    bram_ena <= '1';
+                    bram_addr <= "00000000000";
                 when tx9 => 
                     if wr_got_byte = '1' then
-                        wr_data <= EUDASTL;
+                        wr_data <= EUDAWRPTL;
                         control_state <= tx10;
                     end if;
                 when tx10 =>
                     if wr_got_byte = '1' then
-                        wr_data <= x"00"; -- EUDASTL = 00
+                        status_stage <= bram_rddata(3 downto 0);
+                        bram_ena <= '0';
+                        wr_data <= x"00"; -- EUDAWRPTL = 00
                         control_state <= tx11;
                     end if;
                 when tx11 =>
                     if wr_got_byte = '1' then
-                        wr_data <= x"00"; -- EUDASTH = 00
+                        wr_data <= x"00"; -- EUDAWRPTL = 00
                         control_state <= tx12;
                     end if;
                 when tx12 =>
@@ -657,70 +483,6 @@ begin
                         busy <= '0';
                         control_state <= ctrl_idle;
                     end if;
-                
-                -- Check the TXRTS bit is cleared
-                when verify0 =>
-                    wr_valid <= '1';
-                    wr_data <= RCRU;
-                    control_state <= verify0a;
-                when verify0a =>
-                    if wr_got_byte = '1' then
-                        wr_data <= ECON1L;
-                        control_state <= verify1;
-                    end if;
-                when verify1 =>
-                    if wr_got_byte = '1' then
-                        wr_valid <= '0';
-                        rd_stop <= '0';
-                        control_state <= verify2;
-                    end if;
-                when verify2 =>
-                    if rd_valid = '1' then
-                        buf(7 downto 0) <= rd_data;
-                        control_state <= verify3;
-                        rd_stop <= '1';
-                    end if;
-                when verify3 =>
-                    if buf(1) = '1' then
-                        status_error <= '1';
-                        control_state <= verify0;
-                    else
-                        control_state <= verify4;
-                    end if;
-
-                -- Read the ETXWIRE
-                when verify4 =>
-                    wr_valid <= '1';
-                    wr_data <= RCRU;
-                    control_state <= verify5;
-                when verify5 =>
-                    if wr_got_byte = '1' then
-                        wr_data <= ETXWIREL;
-                        control_state <= verify6;
-                    end if;
-                when verify6 =>
-                    if wr_got_byte = '1' then
-                        wr_valid <= '0';
-                        control_state <= verify7;
-                    end if;
-                when verify7 =>
-                    rd_stop <= '0';
-                    if rd_valid = '1' then
-                        buf(7 downto 0) <= rd_data;
-                        control_state <= verify8;
-                    end if;
-                when verify8 =>
-                    if rd_valid = '1' then
-                        buf(15 downto 8) <= rd_data;
-                        control_state <= verify9;
-                    end if;
-                when verify9 =>
-                    rd_stop <= '1';
-                    status_error <= '0';
-                    debug_var <= buf;
-                    debug_len <= 16;
-                    debug_start <= 0;
-                    control_state <= debug0;
 
                 when term => -- TODO den her er ubrulig!
                     if buf = x"abcd" then
@@ -744,7 +506,7 @@ begin
                     if l = 0 then
                         if k = debug_len then
                             --k <= debug_start;
-                            control_state <= build0;
+                            control_state <= ctrl_idle;
                         else
                             control_state <= debug0;
                         end if;
