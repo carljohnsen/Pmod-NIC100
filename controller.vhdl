@@ -46,7 +46,8 @@ architecture RTL of controller is
         init30, init31, init32, init33, init34,
         init35, init36, init37, init38, init39,
         init40, init41, init42, init43, init44,
-        init45,
+        init45, init46, init47, init48, init49,
+        init50, init51, init52, init53, 
         ctrl_idle,
         tx0,  tx1,  tx2,  tx3,  tx4,  
         tx5,  tx6,  tx7,  tx8,  tx9,  
@@ -59,7 +60,7 @@ architecture RTL of controller is
     signal control_state : control_state_type;
     signal i, j : integer;
     signal buf : std_logic_vector(15 downto 0);
-    signal next_packet_ptr : std_logic_vector(15 downto 0);
+    signal next_packet_ptr : std_logic_vector(15 downto 0) := x"3000";
     signal rsv : std_logic_vector(15 downto 0);
 
     -- Constants
@@ -351,26 +352,65 @@ begin
                         control_state <= init41;
                     end if;
 
-                when init41 => -- Enable packet reception
-                    wr_valid = '1';
-                    wr_data <= BFSU;
+                when init41 =>
+                    wr_valid <= '1';
+                    wr_data <= WCRU;
                     control_state <= init42;
                 when init42 =>
                     if wr_got_byte = '1' then
-                        wr_data <= ECON1L;
+                        wr_data <= ERXSTL;
                         control_state <= init43;
                     end if;
                 when init43 =>
                     if wr_got_byte = '1' then
-                        wr_data <= RXEN;
+                        wr_data <= x"00"; -- ERXSTL = 0x00
                         control_state <= init44;
                     end if;
                 when init44 =>
                     if wr_got_byte = '1' then
-                        wr_valid <= '0';
+                        wr_data <= x"30"; -- ERXSTH = 0x30
                         control_state <= init45;
                     end if;
                 when init45 =>
+                    if wr_got_byte = '1' then
+                        wr_data <= x"ff"; -- ERXTAILL = 0xff
+                        control_state <= init46;
+                    end if;
+                when init46 =>
+                    if wr_got_byte = '1' then 
+                        wr_data <= x"5f"; -- ERXTAILH = 0x5f
+                        control_state <= init47;
+                    end if;
+                when init47 =>
+                    if wr_got_byte = '1' then
+                        wr_valid <= '0';
+                        control_state <= init48;
+                    end if;
+                when init48 =>
+                    if wr_done = '1' then
+                        control_state <= init49;
+                    end if;
+
+                when init49 => -- Enable packet reception
+                    wr_valid <= '1';
+                    wr_data <= BFSU;
+                    control_state <= init50;
+                when init50 =>
+                    if wr_got_byte = '1' then
+                        wr_data <= ECON1L;
+                        control_state <= init51;
+                    end if;
+                when init51 =>
+                    if wr_got_byte = '1' then
+                        wr_data <= RXEN;
+                        control_state <= init52;
+                    end if;
+                when init52 =>
+                    if wr_got_byte = '1' then
+                        wr_valid <= '0';
+                        control_state <= init53;
+                    end if;
+                when init53 =>
                     if wr_done = '1' then
                         control_state <= tx0;
                         i <= 90;
@@ -387,6 +427,33 @@ begin
                     end if;
 
                 when rx0 =>
+                    wr_valid <= '1';
+                    wr_data <= RCRU;
+                    control_state <= rx1;
+                when rx1 =>
+                    if wr_got_byte = '1' then
+                        wr_data <= PKTCNT;
+                        control_state <= rx2;
+                    end if;
+                when rx2 =>
+                    if wr_got_byte = '1' then
+                        wr_valid <= '0';
+                        rd_stop <= '0';
+                        control_state <= rx3;
+                    end if;
+                when rx3 =>
+                    if rd_valid = '1' then
+                        buf(7 downto 0) := rd_data;
+                        buf(15 downto 8) := x"00";
+                        rd_stop <= '1';
+                        control_state <= rx4;
+                    end if;
+                when rx4 =>
+                    if buf != x"0000" then
+                        control_state <= rx5;
+                    else
+                        control_state <= rx0;
+                    end if;
                 
                 when tx0 =>
                     wr_valid <= '1';
