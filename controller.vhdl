@@ -59,6 +59,8 @@ architecture RTL of controller is
     signal control_state : control_state_type;
     signal i, j : integer;
     signal buf : std_logic_vector(15 downto 0);
+    signal next_packet_ptr : std_logic_vector(15 downto 0);
+    signal rsv : std_logic_vector(15 downto 0);
 
     -- Constants
     -- Instructions
@@ -70,8 +72,10 @@ architecture RTL of controller is
 
     -- Addresses
     constant EUDASTL   : std_logic_vector(7 downto 0) := x"16";
+    constant ESTATL    : std_logic_vector(7 downto 0) := x"1a";
     constant ESTATH    : std_logic_vector(7 downto 0) := x"1b";
     constant ECON1L    : std_logic_vector(7 downto 0) := x"1e";
+    constant ECON1H    : std_logic_vector(7 downto 0) := x"1f";
     constant ECON2L    : std_logic_vector(7 downto 0) := x"6e";
     constant ECON2H    : std_logic_vector(7 downto 0) := x"6f";
     constant ETXSTL    : std_logic_vector(7 downto 0) := x"00";
@@ -81,6 +85,10 @@ architecture RTL of controller is
     constant EIEL      : std_logic_vector(7 downto 0) := x"72";
     constant EIEH      : std_logic_vector(7 downto 0) := x"73";
     constant EUDAWRPTL : std_logic_vector(7 downto 0) := x"90";
+    constant PKTCNT    : std_logic_vector(7 downto 0) := ESTATL;
+    constant EIRL      : std_logic_vector(7 downto 0) := x"1c";
+    constant ERXSTL    : std_logic_vector(7 downto 0) := x"04";
+    constant ERXTAIL   : std_logic_vector(7 downto 0) := x"06";
 
     -- Masks
     constant TXCRCEN  : std_logic_vector(7 downto 0) := "00010000"; -- MACON2L
@@ -92,6 +100,8 @@ architecture RTL of controller is
     constant TXIE     : std_logic_vector(7 downto 0) := "00001000"; -- EIEL
     constant TXABTIE  : std_logic_vector(7 downto 0) := "00000100"; -- EIEL
     constant INTIE    : std_logic_vector(7 downto 0) := "10000000"; -- EIEH
+    constant PKTDEC   : std_logic_vector(7 downto 0) := "00000001"; -- ECON1H
+    constant PKTIF    : std_logic_vector(7 downto 0) := "01000000"; -- EIRL
 
     -- Default control register values
     constant MACON2L_d : std_logic_vector(7 downto 0) := x"b2";
@@ -367,11 +377,16 @@ begin
                     end if;
 
                 when ctrl_idle =>
-                    if tx = '1' then
+                    if rx = '1' then
+                        busy <= '1';
+                        control_state <= rx0;
+                    elsif tx = '1' then
                         i <= to_integer(unsigned(tx_len));
                         busy <= '1';
                         control_state <= tx0;
                     end if;
+
+                when rx0 =>
                 
                 when tx0 =>
                     wr_valid <= '1';
