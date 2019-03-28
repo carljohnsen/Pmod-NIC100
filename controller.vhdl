@@ -36,22 +36,21 @@ end controller;
 architecture RTL of controller is
     -- Types
     type control_state_type is (
-        init0,  init1,  init2,  init3,
-        init4,  init5,  init6,  init7,
-        init8,  init9,  init10, init11,
-        init12, init13, init14, init15,
-        init16, init17, init18, init19,
-        init20,
-        init21, init22, init23, init24,
-        init25, init26, init27, init28,
-        init29, init30, init31,
-        init3a, init4a, init8a, init14a, init16a,
-        init0a, init8aa, init16aa, 
-        init4aa, 
+        init0,  init1,  init2,  init3,  init4,  
+        init5,  init6,  init7,  init8,  init9,  
+        init10, init11, init12, init13, init14, 
+        init15, init16, init17, init18, init19,
+        init20, init21, init22, init23, init24,
+        init25, init26, init27, init28, init29, 
+        init30, init31, init32, init33, init34,
+        init35, init36, init37, init38, init39,
+        init40,
         ctrl_idle,
-        tx0,  tx1,  tx2,  tx3,  tx4,  tx5,  tx6,  tx7,
-        tx8,  tx9,  tx10, tx11, tx12, tx13, tx14, tx15,
-        tx16, tx17, tx18, tx19, tx20
+        tx0,  tx1,  tx2,  tx3,  tx4,  
+        tx5,  tx6,  tx7,  tx8,  tx9,  
+        tx10, tx11, tx12, tx13, tx14, 
+        tx15, tx16, tx17, tx18, tx19, 
+        tx20
     );
 
     -- Signals
@@ -108,9 +107,8 @@ begin
             wr_data <= (others => '0');
             wr_valid <= '0';
             rd_stop <= '1';
-            j <= 0;
-            l <= 0;
             i <= 0;
+            j <= 0;
             buf <= (others => '0');
             busy <= '1';
             bram_ena <= '0';
@@ -122,221 +120,221 @@ begin
                 when init0 =>
                     wr_valid <= '1';
                     wr_data <= WCRU;
-                    control_state <= init0a;
-                when init0a =>
-                    if wr_got_byte = '1' then
-                        wr_data <= EUDASTL;
-                        control_state <= init1;
-                    end if;
+                    control_state <= init1;
                 when init1 =>
                     if wr_got_byte = '1' then
-                        wr_data <= x"12"; 
+                        wr_data <= EUDASTL;
                         control_state <= init2;
                     end if;
                 when init2 =>
                     if wr_got_byte = '1' then
-                        wr_data <= x"34"; 
+                        wr_data <= x"12"; 
                         control_state <= init3;
                     end if;
                 when init3 =>
                     if wr_got_byte = '1' then
-                        wr_valid <= '0';
-                        control_state <= init3a;
-                    end if;
-                when init3a =>
-                    if wr_done = '1' then
+                        wr_data <= x"34"; 
                         control_state <= init4;
                     end if;
                 when init4 =>
-                    wr_valid <= '1';
-                    wr_data <= RCRU;
-                    control_state <= init4aa;
-                when init4aa =>
-                    if wr_got_byte = '1' then
-                        wr_data <= EUDASTL;
-                        control_state <= init4a;
-                    end if;
-                when init4a =>
                     if wr_got_byte = '1' then
                         wr_valid <= '0';
                         control_state <= init5;
                     end if;
                 when init5 =>
-                    rd_stop <= '0';
-                    if rd_valid = '1' then
-                        buf(7 downto 0) <= rd_data;
+                    if wr_done = '1' then
                         control_state <= init6;
                     end if;
                 when init6 =>
+                    wr_valid <= '1';
+                    wr_data <= RCRU;
+                    control_state <= init7;
+                when init7 =>
+                    if wr_got_byte = '1' then
+                        wr_data <= EUDASTL;
+                        control_state <= init8;
+                    end if;
+                when init8 =>
+                    if wr_got_byte = '1' then
+                        wr_valid <= '0';
+                        control_state <= init9;
+                    end if;
+                when init9 =>
+                    rd_stop <= '0';
+                    if rd_valid = '1' then
+                        buf(7 downto 0) <= rd_data;
+                        control_state <= init10;
+                    end if;
+                when init10 =>
                     if rd_valid = '1' then
                         buf(15 downto 8) <= rd_data;
-                        control_state <= init7;
+                        control_state <= init11;
                         rd_stop <= '1';
                     end if;
-                when init7 =>
+                when init11 =>
                     if buf /= x"3412" then
                         status_error <= '1';
                         control_state <= init0;
                     else 
-                        control_state <= init8;
+                        control_state <= init12;
                     end if;
 
-                when init8 =>
+                when init12 =>
                     wr_valid <= '1';
                     wr_data <= RCRU;
-                    control_state <= init8aa;
-                when init8aa =>
-                    if wr_got_byte = '1' then
-                        wr_data <= ESTATH;
-                        control_state <= init8a;
-                    end if;
-                when init8a =>
-                    if wr_got_byte = '1' then
-                        wr_valid <= '0';
-                        control_state <= init9;
-                        rd_stop <= '0';
-                    end if;
-                when init9 =>
-                    if rd_valid = '1' then
-                        buf(7 downto 0) <= rd_data;
-                        control_state <= init10;
-                        rd_stop <= '1';
-                    end if;
-                when init10 =>
-                    if rd_data(4) = '1' then
-                        status_error <= '0';
-                        control_state <= init11;
-                    else
-                        status_error <= '1';
-                        control_state <= init8;
-                    end if;
-
-                when init11 =>
-                    wr_valid <= '1';
-                    wr_data <= BFSU;
-                    control_state <= init12;
-                when init12 =>
-                    if wr_got_byte = '1' then
-                        wr_data <= ECON2L;
-                        control_state <= init13;
-                    end if;
+                    control_state <= init13;
                 when init13 =>
                     if wr_got_byte = '1' then
-                        wr_data <= ETHRST;
+                        wr_data <= ESTATH;
                         control_state <= init14;
                     end if;
                 when init14 =>
                     if wr_got_byte = '1' then
                         wr_valid <= '0';
-                        control_state <= init14a;
-                    end if;
-                when init14a =>
-                    if wr_done = '1' then
                         control_state <= init15;
+                        rd_stop <= '0';
+                    end if;
+                when init15 =>
+                    if rd_valid = '1' then
+                        buf(7 downto 0) <= rd_data;
+                        control_state <= init16;
+                        rd_stop <= '1';
+                    end if;
+                when init16 =>
+                    if rd_data(4) = '1' then
+                        status_error <= '0';
+                        control_state <= init17;
+                    else
+                        status_error <= '1';
+                        control_state <= init12;
+                    end if;
+
+                when init17 =>
+                    wr_valid <= '1';
+                    wr_data <= BFSU;
+                    control_state <= init18;
+                when init18 =>
+                    if wr_got_byte = '1' then
+                        wr_data <= ECON2L;
+                        control_state <= init19;
+                    end if;
+                when init19 =>
+                    if wr_got_byte = '1' then
+                        wr_data <= ETHRST;
+                        control_state <= init20;
+                    end if;
+                when init20 =>
+                    if wr_got_byte = '1' then
+                        wr_valid <= '0';
+                        control_state <= init21;
+                    end if;
+                when init21 =>
+                    if wr_done = '1' then
+                        control_state <= init22;
                         i <= 250;
                     end if;
 
-                when init15 =>
-                    i <= i - 1;
-                    if i = 0 then
-                        control_state <= init16;
-                    end if;
-
-                when init16 =>
-                    wr_valid <= '1';
-                    wr_data <= RCRU;
-                    control_state <= init16aa;
-                when init16aa =>
-                    if wr_got_byte = '1' then
-                        wr_data <= EUDASTL;
-                        control_state <= init16a;
-                    end if;
-                when init16a =>
-                    if wr_got_byte = '1' then
-                        wr_valid <= '0';
-                        control_state <= init17;
-                    end if;
-                when init17 =>
-                    rd_stop <= '0';
-                    if rd_valid = '1' then
-                        buf(7 downto 0) <= rd_data;
-                        control_state <= init18;
-                    end if;
-                when init18 =>
-                    if rd_valid = '1' then
-                        buf(15 downto 8) <= rd_data;
-                        control_state <= init19;
-                        rd_stop <= '1';
-                    end if;
-                when init19 =>
-                    if buf = x"0000" then
-                        status_error <= '0';
-                        i <= 2560;
-                        control_state <= init20;
-                    else
-                        status_error <= '1';
-                        control_state <= init16;
-                    end if;
-                when init20 =>
-                    i <= i - 1;
-                    if i = 0 then
-                        control_state <= init21;
-                    end if;
-
-                when init21 =>
-                    wr_valid <= '1';
-                    wr_data <= RCRU;
-                    control_state <= init22;
                 when init22 =>
-                    if wr_got_byte = '1' then
-                        wr_data <= MACON2L;
+                    i <= i - 1;
+                    if i = 0 then
                         control_state <= init23;
                     end if;
+
                 when init23 =>
-                    if wr_got_byte = '1' then
-                        wr_valid <= '0';
-                        rd_stop <= '0';
-                        control_state <= init24;
-                    end if;
+                    wr_valid <= '1';
+                    wr_data <= RCRU;
+                    control_state <= init24;
                 when init24 =>
-                    if rd_valid = '1' then
-                        buf(7 downto 0) <= rd_data;
-                        rd_stop <= '1';
+                    if wr_got_byte = '1' then
+                        wr_data <= EUDASTL;
                         control_state <= init25;
                     end if;
                 when init25 =>
-                    if buf(7 downto 0) = MACON2L_d then
-                        control_state <= init26;
-                    else
-                        status_error <= '1';
-                        control_state <= init21;
-                    end if;
-
-                when init26 =>
-                    wr_valid <= '1';
-                    wr_data <= WCRU;
-                    control_state <= init27;
-                when init27 =>
                     if wr_got_byte = '1' then
-                        wr_data <= MAMXFLL;
+                        wr_valid <= '0';
+                        control_state <= init26;
+                    end if;
+                when init26 =>
+                    rd_stop <= '0';
+                    if rd_valid = '1' then
+                        buf(7 downto 0) <= rd_data;
+                        control_state <= init27;
+                    end if;
+                when init27 =>
+                    if rd_valid = '1' then
+                        buf(15 downto 8) <= rd_data;
                         control_state <= init28;
+                        rd_stop <= '1';
                     end if;
                 when init28 =>
-                    if wr_got_byte = '1' then
-                        wr_data <= x"dc";
+                    if buf = x"0000" then
+                        status_error <= '0';
+                        i <= 2560;
+                        control_state <= init23;
+                    else
+                        status_error <= '1';
                         control_state <= init29;
                     end if;
                 when init29 =>
-                    if wr_got_byte = '1' then
-                        wr_data <= x"05";
+                    i <= i - 1;
+                    if i = 0 then
                         control_state <= init30;
                     end if;
+
                 when init30 =>
+                    wr_valid <= '1';
+                    wr_data <= RCRU;
+                    control_state <= init31;
+                when init31 =>
+                    if wr_got_byte = '1' then
+                        wr_data <= MACON2L;
+                        control_state <= init32;
+                    end if;
+                when init32 =>
                     if wr_got_byte = '1' then
                         wr_valid <= '0';
-                        control_state <= init31;
+                        rd_stop <= '0';
+                        control_state <= init33;
                     end if;
-                when init31 =>
+                when init33 =>
+                    if rd_valid = '1' then
+                        buf(7 downto 0) <= rd_data;
+                        rd_stop <= '1';
+                        control_state <= init34;
+                    end if;
+                when init34 =>
+                    if buf(7 downto 0) = MACON2L_d then
+                        control_state <= init35;
+                    else
+                        status_error <= '1';
+                        control_state <= init30;
+                    end if;
+
+                when init35 =>
+                    wr_valid <= '1';
+                    wr_data <= WCRU;
+                    control_state <= init36;
+                when init36 =>
+                    if wr_got_byte = '1' then
+                        wr_data <= MAMXFLL;
+                        control_state <= init37;
+                    end if;
+                when init37 =>
+                    if wr_got_byte = '1' then
+                        wr_data <= x"dc";
+                        control_state <= init38;
+                    end if;
+                when init38 =>
+                    if wr_got_byte = '1' then
+                        wr_data <= x"05";
+                        control_state <= init39;
+                    end if;
+                when init39 =>
+                    if wr_got_byte = '1' then
+                        wr_valid <= '0';
+                        control_state <= init40;
+                    end if;
+                when init40 =>
                     if wr_done = '1' then
                         control_state <= tx0;
                         i <= 90;
