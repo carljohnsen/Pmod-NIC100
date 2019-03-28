@@ -48,7 +48,6 @@ architecture RTL of controller is
         init3a, init4a, init8a, init14a, init16a,
         init0a, init8aa, init16aa, 
         init4aa, 
-        term, debug0, debug1,
         ctrl_idle,
         tx0,  tx1,  tx2,  tx3,  tx4,  tx5,  tx6,  tx7,
         tx8,  tx9,  tx10, tx11, tx12, tx13, tx14, tx15,
@@ -57,8 +56,6 @@ architecture RTL of controller is
 
     -- Signals
     signal control_state : control_state_type;
-    signal debug_var : std_logic_vector(15 downto 0);
-    signal debug_start, debug_len : integer;
     signal k, j, l : integer;
     signal buf : std_logic_vector(15 downto 0);
 
@@ -100,7 +97,6 @@ architecture RTL of controller is
 begin
     
     process (clk, rst)
-        variable debug_tmp : std_logic_vector(3 downto 0);
         variable tmp : std_logic_vector(15 downto 0);
     begin
         if rst = '0' then
@@ -111,9 +107,6 @@ begin
             control_state <= init0;
             wr_data <= (others => '0');
             wr_valid <= '0';
-            debug_var <= (others => '1');
-            debug_start <= 0;
-            debug_len <= 0;
             rd_stop <= '1';
             k <= 0;
             l <= 0;
@@ -183,11 +176,7 @@ begin
                 when init7 =>
                     if buf /= x"3412" then
                         status_error <= '1';
-                        debug_var <= buf;
-                        debug_len <= 16;
-                        debug_start <= 0;
-                        k <= 0;
-                        control_state <= debug0;
+                        control_state <= init0;
                     else 
                         control_state <= init8;
                     end if;
@@ -286,11 +275,7 @@ begin
                         control_state <= init20;
                     else
                         status_error <= '1';
-                        debug_var <= buf;
-                        debug_len <= 16;
-                        debug_start <= 0;
-                        k <= 0;
-                        control_state <= debug0;
+                        control_state <= init16;
                     end if;
                 when init20 =>
                     j <= j - 1;
@@ -324,11 +309,7 @@ begin
                         control_state <= init26;
                     else
                         status_error <= '1';
-                        debug_var(7 downto 0) <= buf(7 downto 0);
-                        debug_len <= 8;
-                        debug_start <= 0;
-                        k <= 0;
-                        control_state <= debug0;
+                        control_state <= init21;
                     end if;
 
                 when init26 =>
@@ -482,36 +463,6 @@ begin
                     if wr_done = '1' then
                         busy <= '0';
                         control_state <= ctrl_idle;
-                    end if;
-
-                when term => -- TODO den her er ubrulig!
-                    if buf = x"abcd" then
-                        control_state <= init0;
-                    else
-                        status_error <= '0';
-                        debug_var <= x"ffff";
-                        debug_len <= 16;
-                        debug_start <= 0;
-                        control_state <= debug0;
-                    end if;
-
-                when debug0 =>
-                    status_stage(3 downto 0) <= debug_var((k+3) downto k);
-                    debug_tmp := std_logic_vector(to_unsigned(k, 4));
-                    status_debug <= debug_tmp(3 downto 2);
-                    k <= k + 4;
-                    l <= 10000000;
-                    control_state <= debug1;
-                when debug1 =>
-                    if l = 0 then
-                        if k = debug_len then
-                            --k <= debug_start;
-                            control_state <= ctrl_idle;
-                        else
-                            control_state <= debug0;
-                        end if;
-                    else
-                        l <= l - 1;
                     end if;
             end case;
         end if;
