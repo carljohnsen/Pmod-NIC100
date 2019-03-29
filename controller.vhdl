@@ -480,7 +480,7 @@ begin
                     end if;
                 when rx8 =>
                     if wr_got_byte = '1' then
-                        wr_data <= next_packet_ptr(15 downto 0);
+                        wr_data <= next_packet_ptr(15 downto 8);
                         control_state <= rx9;
                     end if;
                 when rx9 =>
@@ -522,7 +522,7 @@ begin
                 when rx16 =>
                     if rd_valid <= '1' then
                         rsv(15 downto 8) <= rd_data;
-                        rx_len(15 downto 8) <= rd_data;
+                        rx_len(10 downto 8) <= rd_data(2 downto 0);
                         i <= 4; -- RSV is 6 bytes, we only need the first 2
                         control_state <= rx17;
                     end if;
@@ -568,7 +568,7 @@ begin
                     end if;
                 when rx23 =>
                     if wr_got_byte = '1' then
-                        wr_data <= tmp(15 downto 0);
+                        wr_data <= tmp(15 downto 8);
                         control_state <= rx24;
                     end if;
                 when rx24 =>
