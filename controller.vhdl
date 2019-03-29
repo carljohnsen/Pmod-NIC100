@@ -49,13 +49,12 @@ architecture RTL of controller is
         init45, init46, init47, init48, init49,
         init50, init51, init52, init53, 
         ctrl_idle,
-        rx0,  rx1,   rx2,   rx3,   rx4,
-        rx5,  rx6,   rx7,   rx8,   rx9,
-        rx10, rx11,  rx12,  rx13,  rx14,
-        rx15, rx16,  rx17,  rx18,  rx19,
-        rx20, rx21,  rx22,  rx23,  rx24,
-        rx25, rx26,  rx27,  rx28,  rx29,
-        rx30,
+        rx0,  rx1,  rx2,  rx3,  rx4,
+        rx5,  rx6,  rx7,  rx8,  rx9,
+        rx10, rx11, rx12, rx13, rx14,
+        rx15, rx16, rx17, rx18, rx19,
+        rx20, rx21, rx22, rx23, rx24,
+        rx25, rx26, rx27, rx28, 
         tx0,  tx1,  tx2,  tx3,  tx4,
         tx5,  tx6,  tx7,  tx8,  tx9,  
         tx10, tx11, tx12, tx13, tx14, 
@@ -72,12 +71,13 @@ architecture RTL of controller is
 
     -- Constants
     -- Instructions
-    constant WCRU     : std_logic_vector(7 downto 0) := "00100010";
-    constant RCRU     : std_logic_vector(7 downto 0) := "00100000";
-    constant BFSU     : std_logic_vector(7 downto 0) := "00100100";
-    constant RUDADATA : std_logic_vector(7 downto 0) := "00110000";
-    constant WUDADATA : std_logic_vector(7 downto 0) := "00110010";
-    constant SETTXRTS : std_logic_vector(7 downto 0) := "11010100";
+    constant WCRU      : std_logic_vector(7 downto 0) := "00100010";
+    constant RCRU      : std_logic_vector(7 downto 0) := "00100000";
+    constant BFSU      : std_logic_vector(7 downto 0) := "00100100";
+    constant RUDADATA  : std_logic_vector(7 downto 0) := "00110000";
+    constant WUDADATA  : std_logic_vector(7 downto 0) := "00110010";
+    constant SETTXRTS  : std_logic_vector(7 downto 0) := "11010100";
+    constant SETPKTDEC : std_logic_vector(7 downto 0) := "11001100";
 
     -- Addresses
     constant EUDASTL   : std_logic_vector(7 downto 0) := x"16";
@@ -197,7 +197,7 @@ begin
                     if buf /= x"3412" then
                         status_error <= '1';
                         control_state <= init0;
-                    else 
+                    else
                         status_error <= '0';
                         control_state <= init12;
                     end if;
@@ -374,17 +374,17 @@ begin
                     end if;
                 when init43 =>
                     if wr_got_byte = '1' then
-                        wr_data <= x"00"; -- ERXSTL = 0x00
+                        wr_data <= next_packet_ptr(7 downto 0); -- ERXSTL = 0x00
                         control_state <= init44;
                     end if;
                 when init44 =>
                     if wr_got_byte = '1' then
-                        wr_data <= x"30"; -- ERXSTH = 0x30
+                        wr_data <= next_packet_ptr(15 downto 8); -- ERXSTH = 0x30
                         control_state <= init45;
                     end if;
                 when init45 =>
                     if wr_got_byte = '1' then
-                        wr_data <= x"ff"; -- ERXTAILL = 0xff
+                        wr_data <= x"fe"; -- ERXTAILL = 0xff
                         control_state <= init46;
                     end if;
                 when init46 =>
@@ -454,6 +454,7 @@ begin
                     end if;
                 when rx3 =>
                     if rd_valid = '1' then
+                        status_stage(3 downto 0) <= rd_data(3 downto 0);
                         buf(7 downto 0) <= rd_data;
                         buf(15 downto 8) <= x"00";
                         rd_stop <= '1';
@@ -532,8 +533,10 @@ begin
                     if rd_valid <= '1' then
                         if i = 1 then
                             control_state <= rx18;
+                            i <= 0;
+                        else
+                            i <= i - 1;
                         end if;
-                        i <= i - 1;
                     end if;
                 when rx18 => -- Read the ethernet frame. i should be 0
                     if rd_valid <= '1' then
@@ -585,24 +588,14 @@ begin
                 
                 when rx26 => -- Decrement PKTCNT
                     wr_valid <= '1';
-                    wr_data <= BFSU;
+                    wr_data <= SETPKTDEC;
                     control_state <= rx27;
                 when rx27 =>
                     if wr_got_byte = '1' then
-                        wr_data <= ECON1H;
+                        wr_valid <= '0';
                         control_state <= rx28;
                     end if;
                 when rx28 =>
-                    if wr_got_byte = '1' then
-                        wr_data <= PKTDEC;
-                        control_state <= rx29;
-                    end if;
-                when rx29 =>
-                    if wr_got_byte = '1' then
-                        wr_valid <= '0';
-                        control_state <= rx30;
-                    end if;
-                when rx30 =>
                     if wr_done = '1' then
                         busy <= '0';
                         control_state <= ctrl_idle;
