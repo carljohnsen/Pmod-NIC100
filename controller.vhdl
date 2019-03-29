@@ -198,6 +198,7 @@ begin
                         status_error <= '1';
                         control_state <= init0;
                     else 
+                        status_error <= '0';
                         control_state <= init12;
                     end if;
 
@@ -292,10 +293,10 @@ begin
                     if buf = x"0000" then
                         status_error <= '0';
                         i <= 2560;
-                        control_state <= init23;
+                        control_state <= init29;
                     else
                         status_error <= '1';
-                        control_state <= init29;
+                        control_state <= init23;
                     end if;
                 when init29 =>
                     i <= i - 1;
@@ -326,6 +327,7 @@ begin
                     end if;
                 when init34 =>
                     if buf(7 downto 0) = MACON2L_d then
+                        status_error <= '0';
                         control_state <= init35;
                     else
                         status_error <= '1';
