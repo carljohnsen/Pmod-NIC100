@@ -49,7 +49,14 @@ architecture RTL of controller is
         init45, init46, init47, init48, init49,
         init50, init51, init52, init53, 
         ctrl_idle,
-        tx0,  tx1,  tx2,  tx3,  tx4,  
+        rx0,  rx1,   rx2,   rx3,   rx4,
+        rx5,  rx6,   rx7,   rx8,   rx9,
+        rx10, rx11,  rx12,  rx13,  rx14,
+        rx15, rx16,  rx17,  rx18,  rx19,
+        rx20, rx21,  rx22,  rx23,  rx24,
+        rx25, rx26,  rx27,  rx28,  rx29,
+        rx30,
+        tx0,  tx1,  tx2,  tx3,  tx4,
         tx5,  tx6,  tx7,  tx8,  tx9,  
         tx10, tx11, tx12, tx13, tx14, 
         tx15, tx16, tx17, tx18, tx19, 
@@ -91,7 +98,7 @@ architecture RTL of controller is
     constant PKTCNT    : std_logic_vector(7 downto 0) := ESTATL;
     constant EIRL      : std_logic_vector(7 downto 0) := x"1c";
     constant ERXSTL    : std_logic_vector(7 downto 0) := x"04";
-    constant ERXTAIL   : std_logic_vector(7 downto 0) := x"06";
+    constant ERXTAILL  : std_logic_vector(7 downto 0) := x"06";
 
     -- Masks
     constant TXCRCEN  : std_logic_vector(7 downto 0) := "00010000"; -- MACON2L
@@ -445,16 +452,16 @@ begin
                     end if;
                 when rx3 =>
                     if rd_valid = '1' then
-                        buf(7 downto 0) := rd_data;
-                        buf(15 downto 8) := x"00";
+                        buf(7 downto 0) <= rd_data;
+                        buf(15 downto 8) <= x"00";
                         rd_stop <= '1';
                         control_state <= rx4;
                     end if;
                 when rx4 =>
-                    if buf != x"0000" then
-                        control_state <= rx5;
-                    else
+                    if buf = x"0000" then
                         control_state <= rx0;
+                    else
+                        control_state <= rx5;
                     end if;
 
                 when rx5 => -- Move the read pointer
@@ -486,7 +493,7 @@ begin
                         control_state <= rx11;
                     end if;
 
-                when rx11 => -- Start reading the packet. First comes the next_packet_ptr TODO current version reads RSV. should read this ptr!
+                when rx11 => -- Start reading the packet. First comes the next_packet_ptr
                     wr_valid <= '1';
                     wr_data <= RUDADATA;
                     control_state <= rx12;
@@ -498,22 +505,105 @@ begin
                     end if;
                 when rx13 =>
                     if rd_valid <= '1' then
-                        rsv(7 downto 0) <= rd_data;
+                        next_packet_ptr(7 downto 0) <= rd_data;
                         control_state <= rx14;
                     end if;
                 when rx14 =>
                     if rd_valid <= '1' then
-                        rsv(15 downto 8) <= rd_data;
+                        next_packet_ptr(15 downto 8) <= rd_data;
                         control_state <= rx15;
-                        i <= 3;
                     end if;
-                when rx15 =>
+                when rx15 => -- Then comes RSV
                     if rd_valid <= '1' then
-                        if i = 0 then
-                            control_state <= rx16;
-                            rx_len <= rsv;
+                        rsv(7 downto 0) <= rd_data;
+                        rx_len(7 downto 0) <= rd_data;
+                        control_state <= rx16;
+                    end if;
+                when rx16 =>
+                    if rd_valid <= '1' then
+                        rsv(15 downto 8) <= rd_data;
+                        rx_len(15 downto 8) <= rd_data;
+                        i <= 4; -- RSV is 6 bytes, we only need the first 2
+                        control_state <= rx17;
+                    end if;
+                when rx17 =>
+                    if rd_valid <= '1' then
+                        if i = 1 then
+                            control_state <= rx18;
                         end if;
                         i <= i - 1;
+                    end if;
+                when rx18 => -- Read the ethernet frame. i should be 0
+                    if rd_valid <= '1' then
+                        bram_ena <= '1';
+                        bram_addr <= std_logic_vector(to_unsigned(i, 11));
+                        bram_wrena <= '1';
+                        bram_wrdata <= rd_data;
+                        if i = (to_integer(unsigned(rsv))-1) then
+                            control_state <= rx19;
+                            rd_stop <= '1';
+                        end if;
+                        i <= i + 1;
+                    else
+                        bram_ena <= '0';
+                    end if;
+                when rx19 =>
+                    bram_ena <= '0';
+                    control_state <= rx20;
+                
+                when rx20 => -- Update the tail pointer to next_packet_ptr-2
+                    wr_valid <= '1';
+                    wr_data <= WCRU;
+                    control_state <= rx21;
+                when rx21 =>
+                    if wr_got_byte = '1' then
+                        wr_data <= ERXTAILL;
+                        control_state <= rx22;
+                    end if;
+                when rx22 =>
+                    if wr_got_byte = '1' then
+                        tmp := std_logic_vector(unsigned(next_packet_ptr) - to_unsigned(2, 16));
+                        wr_data <= tmp(7 downto 0);
+                        control_state <= rx23;
+                    end if;
+                when rx23 =>
+                    if wr_got_byte = '1' then
+                        wr_data <= tmp(15 downto 0);
+                        control_state <= rx24;
+                    end if;
+                when rx24 =>
+                    if wr_got_byte = '1' then
+                        wr_valid <= '1';
+                        control_state <= rx25;
+                    end if;
+                when rx25 =>
+                    if wr_done = '1' then
+                        control_state <= rx26;
+                    end if;
+                
+                when rx26 => -- Decrement PKTCNT
+                    wr_valid <= '1';
+                    wr_data <= BFSU;
+                    control_state <= rx27;
+                when rx27 =>
+                    if wr_got_byte = '1' then
+                        wr_data <= ECON1H;
+                        control_state <= rx28;
+                    end if;
+                when rx28 =>
+                    if wr_got_byte = '1' then
+                        wr_data <= PKTDEC;
+                        control_state <= rx29;
+                    end if;
+                when rx29 =>
+                    if wr_got_byte = '1' then
+                        wr_valid <= '0';
+                        control_state <= rx30;
+                    end if;
+                when rx30 =>
+                    if wr_done = '1' then
+                        busy <= '0';
+                        control_state <= ctrl_idle;
                     end if;
                 
                 when tx0 =>
