@@ -224,7 +224,7 @@ begin
                         rd_stop <= '1';
                     end if;
                 when init16 =>
-                    if rd_data(4) = '1' then
+                    if buf(4) = '1' then
                         status_error <= '0';
                         control_state <= init17;
                     else
@@ -467,7 +467,7 @@ begin
                         control_state <= rx5;
                     end if;
 
-                when rx5 => -- Move the read pointer
+                when rx5 => -- Move the read pointer TODO it should be ERXRDPTL instead!
                     wr_valid <= '1';
                     wr_data <= WCRU;
                     control_state <= rx6;
@@ -498,7 +498,7 @@ begin
 
                 when rx11 => -- Start reading the packet. First comes the next_packet_ptr
                     wr_valid <= '1';
-                    wr_data <= RUDADATA;
+                    wr_data <= RUDADATA; -- TODO it should be RRXDATA instead!
                     control_state <= rx12;
                 when rx12 =>
                     if wr_got_byte = '1' then
@@ -578,7 +578,7 @@ begin
                     end if;
                 when rx24 =>
                     if wr_got_byte = '1' then
-                        wr_valid <= '1';
+                        wr_valid <= '0';
                         control_state <= rx25;
                     end if;
                 when rx25 =>
