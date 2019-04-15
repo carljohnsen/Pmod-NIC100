@@ -50,7 +50,8 @@ architecture RTL of controller is
         init50, init51, init52, init53, 
         ctrl_idle,
         rx0,  rx1,  rx2,  rx3,  rx4,
-        rx5,  rx6,  rx7,  rx8,  rx9,
+        rx5,  --rx6,  
+        rx7,  rx8,  rx9,
         rx10, rx11, rx12, rx13, rx14,
         rx15, rx16, rx17, rx18, rx19,
         rx20, rx21, rx22, rx23, rx24,
@@ -66,7 +67,7 @@ architecture RTL of controller is
     signal control_state : control_state_type;
     signal i, j : integer;
     signal buf : std_logic_vector(15 downto 0);
-    signal next_packet_ptr : std_logic_vector(15 downto 0) := x"3000";
+    signal next_packet_ptr : std_logic_vector(15 downto 0) := x"3002";
     signal rsv : std_logic_vector(15 downto 0);
 
     -- Constants
@@ -78,6 +79,8 @@ architecture RTL of controller is
     constant WUDADATA  : std_logic_vector(7 downto 0) := "00110010";
     constant SETTXRTS  : std_logic_vector(7 downto 0) := "11010100";
     constant SETPKTDEC : std_logic_vector(7 downto 0) := "11001100";
+    constant WRXRDPT   : std_logic_vector(7 downto 0) := "01100100";
+    constant RRXDATA   : std_logic_vector(7 downto 0) := "00101100";
 
     -- Addresses
     constant EUDASTL   : std_logic_vector(7 downto 0) := x"16";
@@ -373,18 +376,19 @@ begin
                         control_state <= init43;
                     end if;
                 when init43 =>
+                    tmp := std_logic_vector(unsigned(next_packet_ptr)-to_unsigned(2, 16));
                     if wr_got_byte = '1' then
-                        wr_data <= next_packet_ptr(7 downto 0); -- ERXSTL = 0x00
+                        wr_data <= tmp(7 downto 0); -- ERXSTL = 0x00
                         control_state <= init44;
                     end if;
                 when init44 =>
                     if wr_got_byte = '1' then
-                        wr_data <= next_packet_ptr(15 downto 8); -- ERXSTH = 0x30
+                        wr_data <= tmp(15 downto 8); -- ERXSTH = 0x30
                         control_state <= init45;
                     end if;
                 when init45 =>
                     if wr_got_byte = '1' then
-                        wr_data <= x"fe"; -- ERXTAILL = 0xff
+                        wr_data <= x"fe"; -- ERXTAILL = 0xfe
                         control_state <= init46;
                     end if;
                 when init46 =>
@@ -467,15 +471,15 @@ begin
                         control_state <= rx5;
                     end if;
 
-                when rx5 => -- Move the read pointer TODO it should be ERXRDPTL instead!
+                when rx5 => -- Move the read pointer
                     wr_valid <= '1';
-                    wr_data <= WCRU;
-                    control_state <= rx6;
-                when rx6 =>
-                    if wr_got_byte = '1' then
-                        wr_data <= EUDARDPTL;
-                        control_state <= rx7;
-                    end if;
+                    wr_data <= WRXRDPT;
+                    control_state <= rx7;
+                --when rx6 =>
+                --    if wr_got_byte = '1' then
+                --        wr_data <= EUDARDPTL;
+                --        control_state <= rx7;
+                --    end if;
                 when rx7 =>
                     if wr_got_byte = '1' then
                         wr_data <= next_packet_ptr(7 downto 0);
@@ -496,9 +500,9 @@ begin
                         control_state <= rx11;
                     end if;
 
-                when rx11 => -- Start reading the packet. First comes the next_packet_ptr
+                when rx11 => -- Start reading the packet. First comes two bytes to be ignored
                     wr_valid <= '1';
-                    wr_data <= RUDADATA; -- TODO it should be RRXDATA instead!
+                    wr_data <= RRXDATA;
                     control_state <= rx12;
                 when rx12 =>
                     if wr_got_byte = '1' then
@@ -507,30 +511,30 @@ begin
                         control_state <= rx13;
                     end if;
                 when rx13 =>
-                    if rd_valid <= '1' then
+                    if rd_valid = '1' then
                         next_packet_ptr(7 downto 0) <= rd_data;
                         control_state <= rx14;
                     end if;
                 when rx14 =>
-                    if rd_valid <= '1' then
+                    if rd_valid = '1' then
                         next_packet_ptr(15 downto 8) <= rd_data;
                         control_state <= rx15;
                     end if;
                 when rx15 => -- Then comes RSV
-                    if rd_valid <= '1' then
+                    if rd_valid = '1' then
                         rsv(7 downto 0) <= rd_data;
                         rx_len(7 downto 0) <= rd_data;
                         control_state <= rx16;
                     end if;
                 when rx16 =>
-                    if rd_valid <= '1' then
+                    if rd_valid = '1' then
                         rsv(15 downto 8) <= rd_data;
                         rx_len(10 downto 8) <= rd_data(2 downto 0);
                         i <= 4; -- RSV is 6 bytes, we only need the first 2
                         control_state <= rx17;
                     end if;
                 when rx17 =>
-                    if rd_valid <= '1' then
+                    if rd_valid = '1' then
                         if i = 1 then
                             control_state <= rx18;
                             i <= 0;
@@ -539,7 +543,7 @@ begin
                         end if;
                     end if;
                 when rx18 => -- Read the ethernet frame. i should be 0
-                    if rd_valid <= '1' then
+                    if rd_valid = '1' then
                         bram_ena <= '1';
                         bram_addr <= std_logic_vector(to_unsigned(i, 11));
                         bram_wrena <= '1';
