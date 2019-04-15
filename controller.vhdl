@@ -67,7 +67,7 @@ architecture RTL of controller is
     signal control_state : control_state_type;
     signal i, j : integer;
     signal buf : std_logic_vector(15 downto 0);
-    signal next_packet_ptr : std_logic_vector(15 downto 0) := x"3002";
+    signal next_packet_ptr : std_logic_vector(15 downto 0) := x"3000";
     signal rsv : std_logic_vector(15 downto 0);
 
     -- Constants
@@ -376,7 +376,7 @@ begin
                         control_state <= init43;
                     end if;
                 when init43 =>
-                    tmp := std_logic_vector(unsigned(next_packet_ptr)-to_unsigned(2, 16));
+                    tmp := next_packet_ptr;
                     if wr_got_byte = '1' then
                         wr_data <= tmp(7 downto 0); -- ERXSTL = 0x00
                         control_state <= init44;
