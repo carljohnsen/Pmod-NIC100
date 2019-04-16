@@ -558,6 +558,7 @@ begin
                     end if;
                 when rx19 =>
                     bram_ena <= '0';
+                    bram_wrena <= '0';
                     control_state <= rx20;
                 
                 when rx20 => -- Update the tail pointer to next_packet_ptr-2
@@ -632,7 +633,7 @@ begin
                     end if;
                 when tx5 =>
                     if wr_got_byte = '1' then 
-                        wr_data <= tmp(15 downto 8); -- ETXLENH = 0
+                        wr_data <= tmp(15 downto 8); -- ETXLENH
                         control_state <= tx6;
                     end if;
                 when tx6 =>
@@ -649,8 +650,6 @@ begin
                     wr_valid <= '1';
                     wr_data <= WCRU;
                     control_state <= tx9;
-                    bram_ena <= '1';
-                    bram_addr <= "00000000000";
                 when tx9 => 
                     if wr_got_byte = '1' then
                         wr_data <= EUDAWRPTL;
@@ -658,14 +657,12 @@ begin
                     end if;
                 when tx10 =>
                     if wr_got_byte = '1' then
-                        status_stage <= bram_rddata(3 downto 0);
-                        bram_ena <= '0';
                         wr_data <= x"00"; -- EUDAWRPTL = 00
                         control_state <= tx11;
                     end if;
                 when tx11 =>
                     if wr_got_byte = '1' then
-                        wr_data <= x"00"; -- EUDAWRPTL = 00
+                        wr_data <= x"00"; -- EUDAWRPTH = 00
                         control_state <= tx12;
                     end if;
                 when tx12 =>
