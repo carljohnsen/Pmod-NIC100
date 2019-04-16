@@ -90,7 +90,7 @@ def read_packet():
 # Function for replying to an ARP request
 def reply_arp(dst_mac, dst_ip):
     hw_type = [0x00, 0x01]
-    protocol = [0x08, 0x06]
+    protocol = [0x08, 0x00]
     hw_size = [0x06]
     prot_size = [0x04]
     op = [0x00, 0x02]
