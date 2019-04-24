@@ -47,6 +47,7 @@ architecture RTL of controller is
         init35, init36, init37, init38, init39,
         init40, init41, init42, init43, init44,
         init45, init46, init47, init48, init49,
+        init48a, init48aa, init48aaa, init48aaaa,
         init50, init51, init52, init53, 
         ctrl_idle,
         rx0,  rx1,  rx2,  rx3,  rx4,
@@ -102,6 +103,7 @@ architecture RTL of controller is
     constant EIRL      : std_logic_vector(7 downto 0) := x"1c";
     constant ERXSTL    : std_logic_vector(7 downto 0) := x"04";
     constant ERXTAILL  : std_logic_vector(7 downto 0) := x"06";
+    constant MAADR3L   : std_logic_vector(7 downto 0) := x"60";
 
     -- Masks
     constant TXCRCEN  : std_logic_vector(7 downto 0) := "00010000"; -- MACON2L
@@ -402,6 +404,30 @@ begin
                         control_state <= init48;
                     end if;
                 when init48 =>
+                    if wr_done = '1' then
+                        control_state <= init48a;
+                    end if;
+
+                when init48a => 
+                    wr_valid <= '1';
+                    wr_data <= WCRU;
+                    control_state <= init48aa;
+                when init48aa =>
+                    if wr_got_byte = '1' then
+                        wr_data <= MAADR3L;
+                        control_state <= init48aaa;
+                        i <= 6;
+                    end if;
+                when init48aaa =>
+                    if wr_got_byte = '1' then
+                        if i = 0 then
+                            control_state <= init48aaaa;
+                            wr_valid <= '0';
+                        end if;
+                        wr_data <= x"ab";
+                        i <= i - 1;
+                    end if;
+                when init48aaaa =>
                     if wr_done = '1' then
                         control_state <= init49;
                     end if;
