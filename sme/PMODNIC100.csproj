@@ -1,0 +1,12 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>netcoreapp2.2</TargetFramework>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="SME" Version="0.4.0-beta"/>
+    <PackageReference Include="SME.AST" Version="0.4.0-beta"/>
+    <PackageReference Include="SME.VHDL" Version="0.4.0-beta"/>
+    <PackageReference Include="SME.Tracer" Version="0.4.0-beta"/>
+  </ItemGroup>
+</Project>
